@@ -10,6 +10,17 @@ Telegram бот для автоматического создания скри�
 - 🔄 Простая настройка через команды Telegram
 - 📅 Гибкое планирование времени отправки
 
+## ⚠️ Важно: Совместимость с Python
+
+**Если вы используете Python 3.13+**, используйте упрощенную версию без APScheduler:
+```bash
+# Используйте эти файлы:
+cp main_simple.py main.py
+cp requirements_simple.txt requirements.txt
+```
+
+**Для Python 3.11 или 3.12** используйте стандартную версию (уже настроена по умолчанию).
+
 ## 🚀 Установка
 
 ### 1. Требования
@@ -183,17 +194,53 @@ PAGE_TIMEOUT=30000  # в миллисекундах (30 секунд)
 
 ```
 telegram_screenshot_bot/
-├── main.py                 # Основной файл бота
-├── screenshot_service.py   # Сервис для создания скриншотов
-├── config.py              # Конфигурация
-├── requirements.txt       # Зависимости Python
-├── .env.example          # Пример файла конфигурации
-├── .env                  # Ваша конфигурация (создается вручную)
-├── screenshots/          # Папка для временных скриншотов (создается автоматически)
-└── README.md            # Этот файл
+├── main.py                    # Основной файл бота (с APScheduler)
+├── main_simple.py             # Альтернативная версия (без APScheduler, для Python 3.13+)
+├── screenshot_service.py      # Сервис для создания скриншотов
+├── config.py                  # Конфигурация
+├── requirements.txt           # Зависимости для Python 3.11-3.12
+├── requirements_simple.txt    # Зависимости для Python 3.13+
+├── runtime.txt               # Версия Python для деплоя (3.12.8)
+├── .env.example              # Пример файла конфигурации
+├── .env                      # Ваша конфигурация (создается вручную)
+├── .gitignore               # Git ignore файл
+├── screenshots/             # Папка для временных скриншотов (создается автоматически)
+├── README.md               # Этот файл
+├── EXAMPLES.md            # Примеры использования
+└── TROUBLESHOOTING.md    # Решение проблем
 ```
 
 ## ⚠️ Возможные проблемы
+
+### "Failed building wheel for greenlet" (Python 3.13)
+
+**Проблема:** Пакет `greenlet` (зависимость APScheduler) несовместим с Python 3.13+
+
+**Решение 1 - Использовать упрощенную версию (рекомендуется для Python 3.13+):**
+```bash
+# Скопируйте упрощенную версию
+cp main_simple.py main.py
+cp requirements_simple.txt requirements.txt
+
+# Установите зависимости
+pip install -r requirements.txt
+playwright install chromium
+
+# Запустите бота
+python main.py
+```
+
+**Решение 2 - Использовать Python 3.12:**
+```bash
+# Установите Python 3.12 через pyenv или используйте виртуальное окружение
+pyenv install 3.12.8
+pyenv local 3.12.8
+
+# Или укажите при деплое (файл runtime.txt уже создан)
+```
+
+**Решение 3 - Для деплоя на Render/Heroku:**
+Файл `runtime.txt` уже настроен на Python 3.12.8
 
 ### "TELEGRAM_TOKEN не установлен"
 
