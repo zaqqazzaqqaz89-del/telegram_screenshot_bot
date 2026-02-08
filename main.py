@@ -333,9 +333,13 @@ class ScreenshotBot:
         application.add_handler(CallbackQueryHandler(self.button_callback))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
         
-        # Запускаем планировщик
-        self.scheduler.start()
-        logger.info("Планировщик запущен")
+        # Инициализируем планировщик после запуска приложения
+        async def post_init(application):
+            """Запуск планировщика после инициализации бота"""
+            self.scheduler.start()
+            logger.info("Планировщик запущен")
+        
+        application.post_init = post_init
         
         # Запускаем бота
         logger.info("Бот запущен")

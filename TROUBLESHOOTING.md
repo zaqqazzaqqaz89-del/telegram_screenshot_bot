@@ -1,6 +1,30 @@
 # 🔧 Быстрое решение проблем
 
-## Проблема: Ошибка "Failed building wheel for greenlet"
+## Проблема 1: "RuntimeError: no running event loop"
+
+Эта ошибка возникает при деплое на Render (и других платформах) когда APScheduler пытается запуститься до создания event loop.
+
+```
+RuntimeError: no running event loop
+File ".../apscheduler/schedulers/asyncio.py", line 35, in start
+    self._eventloop = asyncio.get_running_loop()
+```
+
+### ✅ РЕШЕНИЕ
+
+**Версия main.py в этом репозитории уже исправлена!** Просто используйте её.
+
+Если проблема все еще возникает, убедитесь что используете последнюю версию main.py из этого репозитория.
+
+**Или используйте альтернативную версию:**
+```bash
+# В настройках Render измените Start Command на:
+python main_simple.py
+```
+
+---
+
+## Проблема 2: "Failed building wheel for greenlet"
 
 Эта ошибка возникает при использовании Python 3.13+, так как пакет `greenlet` (зависимость APScheduler) пока не полностью совместим с этой версией.
 
