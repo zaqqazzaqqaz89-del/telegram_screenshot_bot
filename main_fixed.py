@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Telegram бот для создания скриншотов веб-сайтов
+Исправлена версия для работы с Render.com и Python 3.13
 """
 import os
 import logging
@@ -77,15 +78,6 @@ class ScreenshotBot:
     async def set_url(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Установка URL сайта"""
         user_id = update.effective_user.id
-        
-        # Инициализируем настройки пользователя, если их нет
-        if user_id not in user_settings:
-            user_settings[user_id] = {
-                'url': None,
-                'selector': None,
-                'schedule_enabled': False,
-                'schedule_time': '09:00'
-            }
         
         if not context.args:
             await update.message.reply_text(
@@ -324,6 +316,18 @@ class ScreenshotBot:
                 text=f"❌ Ошибка при создании планового скриншота:\n{str(e)}"
             )
     
+    async def post_init(self, application: Application) -> None:
+        """Инициализация после запуска приложения (внутри event loop)"""
+        # Запускаем планировщик ПОСЛЕ того как event loop уже создан
+        self.scheduler.start()
+        logger.info("Планировщик запущен внутри event loop")
+    
+    async def post_shutdown(self, application: Application) -> None:
+        """Очистка при остановке"""
+        if self.scheduler.running:
+            self.scheduler.shutdown()
+            logger.info("Планировщик остановлен")
+    
     def run(self):
         """Запуск бота"""
         # Создаем приложение
@@ -342,16 +346,13 @@ class ScreenshotBot:
         application.add_handler(CallbackQueryHandler(self.button_callback))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
         
-        # Инициализируем планировщик после запуска приложения
-        async def post_init(application):
-            """Запуск планировщика после инициализации бота"""
-            self.scheduler.start()
-            logger.info("Планировщик запущен")
+        # ВАЖНО: Регистрируем callback'и для инициализации и завершения
+        # Планировщик запустится ВНУТРИ event loop через post_init
+        application.post_init = self.post_init
+        application.post_shutdown = self.post_shutdown
         
-        application.post_init = post_init
-        
-        # Запускаем бота
-        logger.info("Бот запущен")
+        # Запускаем бота (event loop создается здесь)
+        logger.info("Запуск бота...")
         application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 

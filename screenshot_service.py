@@ -43,16 +43,47 @@ class ScreenshotService:
         filepath = self.screenshots_dir / filename
         
         async with async_playwright() as p:
-            browser = await p.chromium.launch(
-                headless=True,
-                args=[
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-accelerated-2d-canvas',
-                    '--disable-gpu'
-                ]
-            )
+            # Пробуем запустить браузер с разными настройками
+            browser = None
+            
+            # Попытка 1: Стандартный запуск
+            try:
+                browser = await p.chromium.launch(
+                    headless=True,
+                    args=[
+                        '--no-sandbox',
+                        '--disable-setuid-sandbox',
+                        '--disable-dev-shm-usage',
+                        '--disable-accelerated-2d-canvas',
+                        '--disable-gpu',
+                        '--single-process',
+                        '--no-zygote'
+                    ]
+                )
+            except Exception as e:
+                logger.warning(f"Стандартный запуск не удался: {e}")
+                
+                # Попытка 2: С явным указанием пути
+                try:
+                    import os
+                    browser_path = '/opt/render/.cache/ms-playwright/chromium-1148/chrome-linux/chrome'
+                    if os.path.exists(browser_path):
+                        browser = await p.chromium.launch(
+                            headless=True,
+                            executable_path=browser_path,
+                            args=[
+                                '--no-sandbox',
+                                '--disable-setuid-sandbox',
+                                '--disable-dev-shm-usage',
+                                '--disable-accelerated-2d-canvas',
+                                '--disable-gpu',
+                                '--single-process',
+                                '--no-zygote'
+                            ]
+                        )
+                except Exception as e2:
+                    logger.error(f"Запуск с явным путем не удался: {e2}")
+                    raise Exception(f"Не удалось запустить браузер. Попробуйте переустановить: {e}")
             
             try:
                 context = await browser.new_context(
