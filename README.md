@@ -1,344 +1,299 @@
-# Telegram Screenshot Bot 📸
+# 🚀 Telegram Screenshot Bot - Полная инструкция
 
-Telegram бот для автоматического создания скриншотов веб-сайтов по запросу и расписанию.
+Telegram бот для автоматического создания скриншотов веб-сайтов.
 
-## 🌟 Возможности
+## 📋 Что умеет бот
 
-- 📸 Создание скриншотов полной страницы или выбранной области
-- ⏰ Автоматическая отправка скриншотов по расписанию
-- 🎯 Поддержка CSS-селекторов для выбора конкретных элементов
-- 🔄 Простая настройка через команды Telegram
-- 📅 Гибкое планирование времени отправки
+- ✅ Создание скриншотов полной страницы или выбранной области (через CSS-селекторы)
+- ✅ Автоматическая отправка скриншотов по расписанию
+- ✅ Работа в режиме WEBHOOK на Render Web Service
+- ✅ Поддержка Docker для стабильной работы браузера
 
-## ⚠️ Важно: Совместимость с Python
+---
 
-**Если вы используете Python 3.13+**, используйте упрощенную версию без APScheduler:
-```bash
-# Используйте эти файлы:
-cp main_simple.py main.py
-cp requirements_simple.txt requirements.txt
-```
+## 🎯 БЫСТРЫЙ СТАРТ (3 шага)
 
-**Для Python 3.11 или 3.12** используйте стандартную версию (уже настроена по умолчанию).
-
-## 🚀 Установка
-
-### 1. Требования
-
-- Python 3.8 или выше
-- pip (менеджер пакетов Python)
-
-### 2. Клонирование или загрузка проекта
-
-```bash
-# Если используете git
-git clone <your-repo-url>
-cd telegram_screenshot_bot
-
-# Или просто скопируйте все файлы в папку
-```
-
-### 3. Установка зависимостей
-
-```bash
-# Установка Python пакетов
-pip install -r requirements.txt
-
-# Установка браузера Playwright
-playwright install chromium
-```
-
-### 4. Создание Telegram бота
+### Шаг 1: Создать Telegram бота
 
 1. Откройте Telegram и найдите [@BotFather](https://t.me/botfather)
 2. Отправьте команду `/newbot`
-3. Следуйте инструкциям для создания бота
-4. Скопируйте полученный токен (например: `1234567890:ABCdefGHIjklMNOpqrsTUVwxyz`)
+3. Следуйте инструкциям (придумайте имя и username для бота)
+4. **Скопируйте токен** (формат: `1234567890:ABCdefGHIjklMNOpqrsTUVwxyz`)
 
-### 5. Настройка конфигурации
-
-```bash
-# Скопируйте пример файла конфигурации
-cp .env.example .env
-
-# Отредактируйте файл .env и вставьте ваш токен
-nano .env  # или любой другой редактор
-```
-
-В файле `.env` замените `your_bot_token_here` на ваш реальный токен:
-
-```env
-TELEGRAM_TOKEN=1234567890:ABCdefGHIjklMNOpqrsTUVwxyz
-```
-
-## 📖 Использование
-
-### Запуск бота
+### Шаг 2: Загрузить код в GitHub
 
 ```bash
-python main.py
+# Создайте новый репозиторий на GitHub
+# Клонируйте к себе
+git clone https://github.com/ваш-username/telegram_screenshot_bot
+cd telegram_screenshot_bot
+
+# Скопируйте все файлы из этой папки в репозиторий
+# Затем:
+git add .
+git commit -m "Initial commit"
+git push origin main
 ```
 
-### Команды бота
+### Шаг 3: Развернуть на Render
 
-После запуска бота найдите его в Telegram и используйте следующие команды:
+#### Вариант A: Web Service + Webhook (рекомендуется)
 
-#### Основные команды
+1. Зайдите на [render.com](https://render.com)
+2. **New +** → **Web Service**
+3. Подключите ваш GitHub репозиторий
+4. Настройки:
 
-- `/start` - Начать работу с ботом
-- `/help` - Показать справку
-- `/settings` - Показать текущие настройки
+```
+Name: telegram-screenshot-bot (любое имя)
+Region: выберите ближайший
+Branch: main
+Root Directory: (пусто)
+Runtime: Python 3
+Build Command: pip install -r requirements.txt && playwright install chromium
+Start Command: python main.py
+Instance Type: Free или Starter
+```
 
-#### Настройка
+5. **Environment Variables:**
 
-1. **Установить URL сайта:**
-   ```
-   /seturl https://example.com
-   ```
+```
+TELEGRAM_TOKEN = ваш_токен_от_BotFather
+```
 
-2. **Установить CSS-селектор (опционально):**
-   ```
-   /setselector .main-content
-   ```
-   
-   Примеры селекторов:
-   - `.class-name` - элемент с классом
-   - `#element-id` - элемент с ID
-   - `article.post` - комбинированный селектор
-   - `div > p` - вложенные элементы
+6. **Create Web Service**
+7. Подождите 3-5 минут
 
-3. **Сбросить селектор (скриншот всей страницы):**
-   ```
-   /setselector
-   ```
+✅ **Готово!** Бот работает!
 
-#### Получение скриншотов
+#### Вариант B: Docker (если браузер не работает)
 
-- `/screenshot` - Получить скриншот немедленно
-- `/schedule` - Настроить автоматическую отправку по расписанию
+1. Повторите шаги 1-3 из Варианта A
+2. В настройках выберите:
 
-### Настройка расписания
+```
+Environment: Docker
+Docker Build Context Path: .
+Dockerfile Path: ./Dockerfile
+Start Command: python main.py
+```
 
-1. Используйте команду `/schedule`
-2. Нажмите "Включить" для активации автоматической отправки
-3. Нажмите "Изменить время" и введите время в формате `HH:MM` (UTC)
-4. Бот будет автоматически отправлять скриншоты каждый день в указанное время
+3. **Create Web Service**
 
-**Важно:** Время указывается в UTC. Для Москвы (UTC+3) вычтите 3 часа:
-- Чтобы получать в 12:00 по Москве, укажите `09:00`
-- Чтобы получать в 18:00 по Москве, укажите `15:00`
+✅ **Готово!** Браузер работает на 100%!
 
-## 💡 Примеры использования
+---
 
-### Пример 1: Скриншот всего сайта
+## 📖 Использование бота
 
+### В Telegram найдите вашего бота и отправьте:
+
+```
+/start
+```
+
+### Основные команды:
+
+```
+/seturl https://example.com     - Установить URL сайта
+/setselector .main-content      - Выбрать область (опционально)
+/screenshot                     - Сделать скриншот сейчас
+/schedule                       - Настроить автоматическую отправку
+/settings                       - Показать настройки
+/help                           - Справка
+```
+
+### Примеры:
+
+**Скриншот всей страницы:**
 ```
 /seturl https://news.ycombinator.com
 /screenshot
 ```
 
-### Пример 2: Скриншот конкретной области
-
+**Скриншот конкретной области:**
 ```
 /seturl https://github.com
 /setselector .dashboard-sidebar
 /screenshot
 ```
 
-### Пример 3: Ежедневный скриншот биржи
-
+**Ежедневные скриншоты:**
 ```
-/seturl https://finance.yahoo.com
-/setselector #market-summary
+/seturl https://weather.com
 /schedule
 → Включить → Изменить время → 09:00
 ```
 
+---
+
 ## 🔍 Как найти CSS-селектор
 
-### Способ 1: Через DevTools браузера
-
 1. Откройте сайт в браузере
-2. Нажмите F12 (открыть DevTools)
-3. Нажмите на иконку "выбрать элемент" (стрелка в углу)
+2. Нажмите **F12** (откроется DevTools)
+3. Нажмите иконку **"выбрать элемент"** (стрелка в углу)
 4. Кликните на нужный элемент на странице
-5. В DevTools посмотрите на выбранный элемент:
-   - Если есть `class="..."` - используйте `.class-name`
-   - Если есть `id="..."` - используйте `#element-id`
+5. В DevTools посмотрите:
+   - `class="..."` → используйте `.class-name`
+   - `id="..."` → используйте `#element-id`
 
-### Способ 2: Копирование селектора
+**Или:**
+- ПКМ на элементе в DevTools → **Copy** → **Copy selector**
 
-1. Откройте DevTools (F12)
-2. Выберите нужный элемент
-3. ПКМ на элементе в DevTools → Copy → Copy selector
-4. Вставьте скопированный селектор в команду `/setselector`
+---
 
-## 🛠 Расширенная настройка
+## ⚙️ Настройка расписания
 
-### Изменение размера viewport
+Время указывается в **UTC**. Для Москвы (UTC+3):
 
-Отредактируйте файл `.env`:
+| Время МСК | Время UTC | Использование |
+|-----------|-----------|---------------|
+| 09:00 | 06:00 | Утренние новости |
+| 12:00 | 09:00 | Дневные данные |
+| 18:00 | 15:00 | Вечерние обновления |
+| 21:00 | 18:00 | Итоги дня |
 
-```env
-VIEWPORT_WIDTH=1920
-VIEWPORT_HEIGHT=1080
-```
+---
 
-### Изменение таймаута загрузки страницы
+## 🐳 Docker вариант (100% работает)
 
-```env
-PAGE_TIMEOUT=30000  # в миллисекундах (30 секунд)
-```
+Если скриншоты не создаются (ошибка браузера), используйте Docker:
 
-## 📁 Структура проекта
+### На Render:
 
-```
-telegram_screenshot_bot/
-├── main.py                    # Основной файл бота (с APScheduler)
-├── main_simple.py             # Альтернативная версия (без APScheduler, для Python 3.13+)
-├── screenshot_service.py      # Сервис для создания скриншотов
-├── config.py                  # Конфигурация
-├── requirements.txt           # Зависимости для Python 3.11-3.12
-├── requirements_simple.txt    # Зависимости для Python 3.13+
-├── runtime.txt               # Версия Python для деплоя (3.12.8)
-├── .env.example              # Пример файла конфигурации
-├── .env                      # Ваша конфигурация (создается вручную)
-├── .gitignore               # Git ignore файл
-├── screenshots/             # Папка для временных скриншотов (создается автоматически)
-├── README.md               # Этот файл
-├── EXAMPLES.md            # Примеры использования
-└── TROUBLESHOOTING.md    # Решение проблем
-```
+1. **Settings** → **Environment**: выберите **Docker**
+2. **Start Command**: `python main.py`
+3. **Save Changes** → **Manual Deploy** → **Clear build cache & deploy**
 
-## ⚠️ Возможные проблемы
+Браузер будет предустановлен в Docker образе!
 
-### "Failed building wheel for greenlet" (Python 3.13)
+---
 
-**Проблема:** Пакет `greenlet` (зависимость APScheduler) несовместим с Python 3.13+
+## 🛠 Локальная разработка
 
-**Решение 1 - Использовать упрощенную версию (рекомендуется для Python 3.13+):**
+### Установка:
+
 ```bash
-# Скопируйте упрощенную версию
-cp main_simple.py main.py
-cp requirements_simple.txt requirements.txt
+# Клонируйте репозиторий
+git clone your-repo-url
+cd telegram_screenshot_bot
+
+# Создайте виртуальное окружение
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# или
+venv\Scripts\activate  # Windows
 
 # Установите зависимости
 pip install -r requirements.txt
 playwright install chromium
 
-# Запустите бота
-python main.py
+# Создайте .env файл
+cp .env.example .env
+# Отредактируйте .env и добавьте TELEGRAM_TOKEN
 ```
 
-**Решение 2 - Использовать Python 3.12:**
+### Запуск локально (polling режим):
+
+Для локальной разработки используйте polling вместо webhook.
+
+Создайте `main_local.py`:
+
+```python
+# В конце файла замените:
+# application.run_webhook(...)
+
+# На:
+application.run_polling(allowed_updates=Update.ALL_TYPES)
+```
+
+Запуск:
 ```bash
-# Установите Python 3.12 через pyenv или используйте виртуальное окружение
-pyenv install 3.12.8
-pyenv local 3.12.8
-
-# Или укажите при деплое (файл runtime.txt уже создан)
+python main_local.py
 ```
-
-**Решение 3 - Для деплоя на Render/Heroku:**
-Файл `runtime.txt` уже настроен на Python 3.12.8
-
-### "TELEGRAM_TOKEN не установлен"
-
-**Решение:** Создайте файл `.env` на основе `.env.example` и добавьте ваш токен.
-
-### "Элемент не найден на странице"
-
-**Решение:** 
-- Проверьте правильность CSS-селектора
-- Убедитесь, что элемент видим на странице
-- Попробуйте увеличить таймаут в `.env`
-
-### Playwright не устанавливается
-
-**Решение:**
-```bash
-# Установите системные зависимости (Linux)
-playwright install-deps
-
-# Затем снова установите браузер
-playwright install chromium
-```
-
-### Бот не отправляет плановые скриншоты
-
-**Решение:**
-- Убедитесь, что бот запущен и не остановлен
-- Проверьте правильность времени (используется UTC)
-- Проверьте логи на наличие ошибок
-
-## 🔒 Безопасность
-
-- Никогда не публикуйте файл `.env` с вашим токеном
-- Добавьте `.env` в `.gitignore` если используете git
-- Храните токен бота в секрете
-
-## 📝 Логи
-
-Бот выводит логи в консоль. Для сохранения логов в файл используйте:
-
-```bash
-python main.py >> bot.log 2>&1
-```
-
-## 🚀 Запуск в фоновом режиме (Linux)
-
-### С использованием screen
-
-```bash
-screen -S screenshot_bot
-python main.py
-# Нажмите Ctrl+A, затем D для выхода
-
-# Вернуться к боту:
-screen -r screenshot_bot
-```
-
-### С использованием systemd
-
-Создайте файл `/etc/systemd/system/screenshot-bot.service`:
-
-```ini
-[Unit]
-Description=Telegram Screenshot Bot
-After=network.target
-
-[Service]
-Type=simple
-User=your_username
-WorkingDirectory=/path/to/telegram_screenshot_bot
-ExecStart=/usr/bin/python3 /path/to/telegram_screenshot_bot/main.py
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Затем:
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable screenshot-bot
-sudo systemctl start screenshot-bot
-sudo systemctl status screenshot-bot
-```
-
-## 📄 Лицензия
-
-Этот проект создан для образовательных целей. Используйте на свой риск.
-
-## 🤝 Поддержка
-
-Если у вас возникли вопросы или проблемы:
-
-1. Проверьте раздел "Возможные проблемы"
-2. Убедитесь, что все зависимости установлены правильно
-3. Проверьте логи бота на наличие ошибок
 
 ---
 
-**Приятного использования! 🎉**
+## 📊 Структура проекта
+
+```
+telegram_screenshot_bot/
+├── main.py                  # Основной файл бота (WEBHOOK версия)
+├── screenshot_service.py    # Сервис создания скриншотов
+├── config.py               # Конфигурация
+├── requirements.txt        # Зависимости (с [webhooks])
+├── Dockerfile              # Docker образ
+├── .env.example           # Пример конфигурации
+├── .gitignore            # Git ignore
+├── screenshots/          # Временные скриншоты (создается автоматически)
+└── README.md            # Этот файл
+```
+
+---
+
+## ❓ Частые вопросы
+
+### Бот не отвечает
+
+**Проверьте:**
+1. Правильный ли TELEGRAM_TOKEN в Environment Variables на Render
+2. Запущен ли сервис (зеленый статус на Render)
+3. Есть ли ошибки в логах
+
+### Ошибка "Executable doesn't exist"
+
+**Решение:** Используйте Docker вариант:
+- Settings → Environment: **Docker**
+- Clear build cache & deploy
+
+### Ошибка "Port scan timeout"
+
+**Решение:** Убедитесь что используете:
+- `python-telegram-bot[webhooks]` в requirements.txt
+- `application.run_webhook(...)` в main.py (БЕЗ asyncio.run)
+
+### Бот медленно создает скриншоты
+
+**Нормально!** Первый скриншот всегда дольше (запуск браузера).
+Следующие будут быстрее.
+
+---
+
+## 🔄 Обновление
+
+```bash
+# Внесите изменения в код
+git add .
+git commit -m "Update bot"
+git push origin main
+
+# Render автоматически задеплоит новую версию
+```
+
+---
+
+## 🆘 Поддержка
+
+**Логи на Render:**
+- Откройте ваш сервис → **Logs**
+- Ищите строки с ERROR или WARNING
+
+**Проверка webhook:**
+```
+https://ваш-сервис.onrender.com/webhook
+```
+Должно показать: `405 Method Not Allowed` (это нормально!)
+
+---
+
+## 📝 Лицензия
+
+Проект создан для образовательных целей. Используйте на свой риск.
+
+---
+
+## 🎉 Готово!
+
+**Ваш бот работает 24/7 и автоматически создает скриншоты!**
+
+Если возникли проблемы - проверьте логи на Render и следуйте разделу "Частые вопросы".

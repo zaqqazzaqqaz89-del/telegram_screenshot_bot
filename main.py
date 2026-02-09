@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
 Telegram бот для создания скриншотов веб-сайтов
+Версия: WEBHOOK (для Render Web Service)
 """
 import os
 import logging
-from datetime import time
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
@@ -62,23 +62,22 @@ class ScreenshotBot:
             "📖 Инструкция:\n\n"
             "1️⃣ Установите URL командой /seturl\n"
             "   Пример: /seturl https://example.com\n\n"
-            "2️⃣ (Опционально) Установите CSS-селектор для конкретной области:\n"
-            "   /setselector .main-content\n"
-            "   Если не указан, будет скриншот всей страницы\n\n"
+            "2️⃣ (Опционально) Установите CSS-селектор:\n"
+            "   /setselector .main-content\n\n"
             "3️⃣ Получите скриншот командой /screenshot\n\n"
-            "4️⃣ Настройте автоматическую отправку через /schedule\n\n"
+            "4️⃣ Настройте расписание через /schedule\n\n"
             "💡 CSS-селекторы:\n"
             "- По классу: .class-name\n"
             "- По ID: #element-id\n"
-            "- По тегу: div, article, main\n"
-            "- Комбинированные: div.container, #main article"
+            "- По тегу: div, article\n"
+            "- Комбинированные: div.container"
         )
     
     async def set_url(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Установка URL сайта"""
         user_id = update.effective_user.id
         
-        # Инициализируем настройки пользователя, если их нет
+        # Инициализируем настройки, если их нет
         if user_id not in user_settings:
             user_settings[user_id] = {
                 'url': None,
@@ -112,10 +111,9 @@ class ScreenshotBot:
             return
         
         if not context.args:
-            # Сброс селектора
             user_settings[user_id]['selector'] = None
             await update.message.reply_text(
-                "✅ Селектор сброшен. Будет делаться скриншот всей страницы."
+                "✅ Селектор сброшен. Будет скриншот всей страницы."
             )
             return
         
@@ -123,11 +121,11 @@ class ScreenshotBot:
         user_settings[user_id]['selector'] = selector
         await update.message.reply_text(
             f"✅ Селектор установлен: {selector}\n"
-            "Будет делаться скриншот выбранной области."
+            "Будет скриншот выбранной области."
         )
     
     async def take_screenshot(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Создание скриншота по запросу"""
+        """Создание скриншота"""
         user_id = update.effective_user.id
         
         if user_id not in user_settings or not user_settings[user_id]['url']:
@@ -152,7 +150,6 @@ class ScreenshotBot:
             with open(screenshot_path, 'rb') as photo:
                 await update.message.reply_photo(photo=photo, caption=caption)
             
-            # Удаляем временный файл
             os.remove(screenshot_path)
             
         except Exception as e:
@@ -227,12 +224,10 @@ class ScreenshotBot:
             time_str = update.message.text.strip()
             
             try:
-                # Проверяем формат времени
                 hours, minutes = map(int, time_str.split(':'))
                 if 0 <= hours <= 23 and 0 <= minutes <= 59:
                     user_settings[user_id]['schedule_time'] = time_str
                     
-                    # Перезапускаем расписание, если оно включено
                     if user_settings[user_id]['schedule_enabled']:
                         self.remove_scheduled_job(user_id)
                         self.schedule_screenshot_for_user(user_id, context.application)
@@ -271,7 +266,7 @@ class ScreenshotBot:
         await update.message.reply_text(text)
     
     def schedule_screenshot_for_user(self, user_id: int, application):
-        """Добавить задачу в расписание для пользователя"""
+        """Добавить задачу в расписание"""
         settings = user_settings[user_id]
         hours, minutes = map(int, settings['schedule_time'].split(':'))
         
@@ -325,11 +320,10 @@ class ScreenshotBot:
             )
     
     def run(self):
-        """Запуск бота"""
-        # Создаем приложение
+        """Запуск бота в режиме WEBHOOK для Render Web Service"""
         application = Application.builder().token(Config.TELEGRAM_TOKEN).build()
         
-        # Регистрируем обработчики команд
+        # Регистрируем обработчики
         application.add_handler(CommandHandler("start", self.start))
         application.add_handler(CommandHandler("help", self.help_command))
         application.add_handler(CommandHandler("seturl", self.set_url))
@@ -337,22 +331,45 @@ class ScreenshotBot:
         application.add_handler(CommandHandler("screenshot", self.take_screenshot))
         application.add_handler(CommandHandler("schedule", self.schedule_menu))
         application.add_handler(CommandHandler("settings", self.show_settings))
-        
-        # Обработчики кнопок и сообщений
         application.add_handler(CallbackQueryHandler(self.button_callback))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
         
-        # Инициализируем планировщик после запуска приложения
-        async def post_init(application):
-            """Запуск планировщика после инициализации бота"""
+        # Запуск планировщика
+        async def post_init(app):
             self.scheduler.start()
             logger.info("Планировщик запущен")
         
         application.post_init = post_init
         
-        # Запускаем бота
-        logger.info("Бот запущен")
-        application.run_polling(allowed_updates=Update.ALL_TYPES)
+        # Настройка WEBHOOK для Render
+        render_url = os.getenv("RENDER_EXTERNAL_URL")
+        if not render_url:
+            raise RuntimeError(
+                "RENDER_EXTERNAL_URL не установлена!\n"
+                "Render должен установить её автоматически.\n"
+                "Проверьте что вы используете Web Service (не Background Worker)."
+            )
+        
+        port = int(os.getenv("PORT", "10000"))
+        webhook_path = "/webhook"
+        webhook_url = f"{render_url}{webhook_path}"
+        
+        logger.info("=" * 60)
+        logger.info("🚀 Бот запущен в режиме WEBHOOK")
+        logger.info(f"📡 Webhook URL: {webhook_url}")
+        logger.info(f"🔌 Порт: {port}")
+        logger.info("=" * 60)
+        
+        # ВАЖНО: вызываем run_webhook напрямую, БЕЗ asyncio.run(...)
+        # python-telegram-bot сам управляет event loop
+        application.run_webhook(
+            listen="0.0.0.0",
+            port=port,
+            url_path=webhook_path,
+            webhook_url=webhook_url,
+            allowed_updates=Update.ALL_TYPES,
+            drop_pending_updates=True,
+        )
 
 
 if __name__ == '__main__':

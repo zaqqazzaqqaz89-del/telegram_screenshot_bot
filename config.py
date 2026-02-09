@@ -17,8 +17,9 @@ class Config:
     # Проверка наличия токена
     if not TELEGRAM_TOKEN:
         raise ValueError(
-            "TELEGRAM_TOKEN не установлен! "
-            "Создайте файл .env и добавьте строку: TELEGRAM_TOKEN=ваш_токен"
+            "❌ TELEGRAM_TOKEN не установлен!\n"
+            "Создайте файл .env и добавьте строку: TELEGRAM_TOKEN=ваш_токен\n"
+            "Или добавьте в Environment Variables на Render."
         )
     
     # Директория для хранения скриншотов

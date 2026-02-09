@@ -11,8 +11,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Копируем весь код приложения
 COPY . .
 
-# Порт не нужен для бота, но Render может его проверять
-EXPOSE 8080
+# Порт для webhook (Render установит через переменную PORT)
+EXPOSE 10000
 
 # Запуск бота
 CMD ["python", "main.py"]

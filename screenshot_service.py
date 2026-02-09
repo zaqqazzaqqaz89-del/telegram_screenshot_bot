@@ -1,6 +1,7 @@
 """
 Сервис для создания скриншотов веб-страниц
 """
+import os
 import asyncio
 import logging
 from pathlib import Path
@@ -43,11 +44,11 @@ class ScreenshotService:
         filepath = self.screenshots_dir / filename
         
         async with async_playwright() as p:
-            # Пробуем запустить браузер с разными настройками
+            # Пробуем разные способы запуска браузера
             browser = None
             
-            # Попытка 1: Стандартный запуск
             try:
+                # Попытка 1: Стандартный запуск
                 browser = await p.chromium.launch(
                     headless=True,
                     args=[
@@ -63,9 +64,8 @@ class ScreenshotService:
             except Exception as e:
                 logger.warning(f"Стандартный запуск не удался: {e}")
                 
-                # Попытка 2: С явным указанием пути
+                # Попытка 2: С явным указанием пути к браузеру
                 try:
-                    import os
                     browser_path = '/opt/render/.cache/ms-playwright/chromium-1148/chrome-linux/chrome'
                     if os.path.exists(browser_path):
                         browser = await p.chromium.launch(
@@ -83,7 +83,14 @@ class ScreenshotService:
                         )
                 except Exception as e2:
                     logger.error(f"Запуск с явным путем не удался: {e2}")
-                    raise Exception(f"Не удалось запустить браузер. Попробуйте переустановить: {e}")
+                    raise Exception(
+                        f"Не удалось запустить браузер.\n"
+                        f"Убедитесь что Playwright установлен правильно:\n"
+                        f"pip install playwright && playwright install chromium"
+                    )
+            
+            if not browser:
+                raise Exception("Браузер не был запущен")
             
             try:
                 context = await browser.new_context(
@@ -97,7 +104,7 @@ class ScreenshotService:
                 logger.info(f"Загрузка страницы: {url}")
                 await page.goto(url, wait_until='networkidle', timeout=timeout)
                 
-                # Небольшая задержка для полной загрузки контента
+                # Небольшая задержка для полной загрузки
                 await asyncio.sleep(2)
                 
                 # Делаем скриншот
@@ -117,7 +124,7 @@ class ScreenshotService:
                     
                     except PlaywrightTimeout:
                         raise Exception(
-                            f"Элемент '{selector}' не найден или не загрузился. "
+                            f"Элемент '{selector}' не найден или не загрузился.\n"
                             "Проверьте правильность селектора."
                         )
                 else:
@@ -133,55 +140,6 @@ class ScreenshotService:
             except Exception as e:
                 logger.error(f"Ошибка при создании скриншота: {e}")
                 raise
-            
-            finally:
-                await browser.close()
-    
-    async def take_screenshot_with_scroll(
-        self,
-        url: str,
-        scroll_times: int = 3,
-        scroll_delay: float = 1.0
-    ) -> str:
-        """
-        Создает скриншот с прокруткой страницы (для lazy-loading контента)
-        
-        Args:
-            url: URL страницы
-            scroll_times: Количество прокруток
-            scroll_delay: Задержка между прокрутками в секундах
-            
-        Returns:
-            Путь к созданному скриншоту
-        """
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"screenshot_{timestamp}.png"
-        filepath = self.screenshots_dir / filename
-        
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            
-            try:
-                page = await browser.new_page(
-                    viewport={'width': 1920, 'height': 1080}
-                )
-                
-                await page.goto(url, wait_until='networkidle')
-                
-                # Прокручиваем страницу для загрузки lazy-loading контента
-                for i in range(scroll_times):
-                    await page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
-                    await asyncio.sleep(scroll_delay)
-                
-                # Возвращаемся наверх
-                await page.evaluate('window.scrollTo(0, 0)')
-                await asyncio.sleep(1)
-                
-                # Делаем скриншот
-                await page.screenshot(path=str(filepath), full_page=True)
-                
-                logger.info(f"Скриншот с прокруткой сохранён: {filepath}")
-                return str(filepath)
             
             finally:
                 await browser.close()
